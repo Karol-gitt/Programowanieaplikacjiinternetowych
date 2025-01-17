@@ -1,0 +1,185 @@
+# Install MySQL
+
+## Install dependencies
+
+```
+sudo yum install ncurses-devel
+```
+
+## Download MySQL source code
+
+```
+# cd /usr/local/src/
+# wget http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.19.tar.gz
+# tar xvfz mysql-5.6.19.tar.gz
+# cd /usr/local/src/mysql-5.6.19
+```
+
+## Build mysql
+
+```
+# mkdir build
+# cd build
+# cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/mysql
+# make
+# make install
+```
+
+# Initial Setup
+
+## Create group and user
+
+```
+# groupadd mysql
+# useradd -g mysql -d /usr/local/mysql mysql
+```
+
+## Create data directory
+
+```
+# mkdir /var/lib/mysql
+# chown -R mysql:mysql /usr/local/mysql
+```
+
+## Modify /etc/my.cnf
+
+```
+[client]
+socket=/tmp/mysql.sock
+
+[mysqld]
+datadir=/var/lib/mysql
+#socket=/var/lib/mysql/mysql.sock
+socket=/tmp/mysql.sock
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+# Settings user and group are ignored when systemd is used.
+# If you need to run mysqld under a different user or group,
+# customize your systemd unit file for mysqld according to the
+# instructions in http://fedoraproject.org/wiki/Systemd
+collation-server=utf8_unicode_ci
+character-set-server=utf8
+
+[mysqld_safe]
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+```
+
+## Create database
+
+```
+# /usr/local/mysql/scripts/mysql_install_db --user=mysql --datadir=/var/lib/mysql -basedir=/usr/local/mysql 
+```
+
+## Change owner
+
+```
+# chown mysql:mysql -R /var/lib/mysql/*
+```
+
+## Copy initd script
+
+```
+# cp /usr/local/mysql/support-files/mysql.server /etc/init.d/mysqld
+```
+
+## Retart mysql-server
+
+```
+# /etc/init.d/mysqld restart
+```
+
+## Confirm
+
+
+```
+$ mysql --ssl-ca ca-cert.pem
+
+mysql> show variables like '%ssl%';
++---------------+----------------------------------+
+| Variable_name | Value                            |
++---------------+----------------------------------+
+| have_openssl  | YES                              |
+| have_ssl      | YES                              |
+| ssl_ca        | /usr/local/mysql/ca-cert.pem     |
+| ssl_capath    |                                  |
+| ssl_cert      | /usr/local/mysql/server-cert.pem |
+| ssl_cipher    |                                  |
+| ssl_crl       |                                  |
+| ssl_crlpath   |                                  |
+| ssl_key       | /usr/local/mysql/server-key.pem  |
++---------------+----------------------------------+
+9 rows in set (0.00 sec)
+
+mysql> show status like 'Ssl_cipher';
++---------------+--------------------+
+| Variable_name | Value              |
++---------------+--------------------+
+| Ssl_cipher    | DHE-RSA-AES256-SHA |
++---------------+--------------------+
+1 row in set (0.00 sec)
+```
+
+
+# Setup SSL
+
+## Create SSL keys
+
+```
+$ openssl genrsa 2048 > ca-key.pem
+$ openssl req -new -x509 -nodes -days 3600 \
+    -key ca-key.pem -out ca-cert.pem
+$ openssl req -newkey rsa:2048 -days 3600  \
+    -nodes -keyout server-key.pem -out server-req.pem
+$ openssl rsa -in server-key.pem -out server-key.pem
+$ openssl x509 -req -in server-req.pem -days 3600 \
+    -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 \
+    -out server-cert.pem
+```
+
+## Organize key files
+
+- Move generated pem files to `/usr/local/mysql/` directory
+- Change permission `sudo chmod 400 *.pem`
+- Change owner `sudo chown mysql:mysql *.pem`
+
+## Modify my.cnf
+
+```
+[mysqld]
+ssl-ca=/usr/local/mysql/ca-cert.pem
+ssl-cert=/usr/local/mysql/server-cert.pem
+ssl-key=/usr/local/mysql/server-key.pem
+```
+
+## Restart mysql-server
+
+```
+sudo /etc/init.d/mysqld restart
+```
+
+# Setup Binlog
+
+## Create binlog directory
+
+```
+sudo mkdir /var/log/mysql
+chown mysql:mysql -R /var/log/mysql
+```
+
+## Modify my.cnf
+
+```
+server-id = 888888
+log_bin = /var/log/mysql/mysql-bin.log
+expire_logs_days = 30
+max_binlog_size = 1G
+binlog_format = ROW
+replicate-wild-do-table = %.%
+log-slave-updates = TRUE
+binlog-checksum = NONE
+log-bin-use-v1-row-events = TRUE
+lower_case_table_names = 0
+```
+
+## Restart mysql-server
