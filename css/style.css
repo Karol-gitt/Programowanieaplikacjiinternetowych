@@ -1,0 +1,30 @@
+body {
+  //padding-top: 73px;
+}
+
+.dropdown-menu {
+    width: 300px !important;
+    //height: 400px !important;
+}
+
+#infoMessage {
+    position: absolute;
+    z-index: 1000;
+}
+
+.chosen-container{
+    width: 100% !important;
+}
+
+.questions_list, questions_list_order {
+    max-height: 400px !important;
+    overflow: auto !important;
+}
+
+.list-group-item:hover {
+    background-color: #F5F5F5;
+}
+
+#questions_list_order {
+    cursor: pointer;
+}
