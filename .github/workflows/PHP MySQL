@@ -1,0 +1,107 @@
+# Apache2 installation
+sudo apt-get update /
+sudo apt-get install apache2 -y 
+
+sudo ufw app list 
+sudo ufw allow 'Apache Full' 
+sudo ufw status 
+sudo systemctl status apache2 
+
+
+#MySQL
+ sudo apt-get install mysql-client mysql-server -y
+
+Mysql2320!
+
+# Secure mysql
+ sudo mysql_secure_installation 
+  This is Mysql Password
+
+  # Database setup
+    mysql -u root -p
+      CREATE DATABASE database;
+      CREATE USER 'username'@'localhost' IDENTIFIED BY 'rZhb9G+k;}]h?bXA';
+      GRANT ALL PRIVILEGES ON database.* TO 'username'@'localhost';
+      FLUSH PRIVILEGES;
+
+      SELECT DISTINCT User FROM mysql.user;
+
+      EXIT;
+
+
+  sudo systemctl restart apache2.service 
+  sudo systemctl restart mysql.service
+
+# Unknown issue with root user access in SequelPro 
+Create new root user with all database access permissions 
+CREATE USER 'rootuser'@'localhost' IDENTIFIED BY 'L}YVpxW@Gcn@.6vH';
+GRANT ALL PRIVILEGES ON *.* TO 'rootuser'@'localhost';
+
+# PHP
+ sudo apt-get install php7.2 -y 
+ sudo apt-get install libapache2-mod-php -y 
+ * Check with sample php file 
+ 
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
+
+sudo apt-get install php-mbstring php-xml -y
+
+
+# Laravel
+
+sudo apt-get install libapache2-mod-php7.4 php7.4-mbstring php7.4-xmlrpc php7.4-soap php7.4-gd php7.4-xml php7.4-cli php7.4-zip
+
+php artisan key:generate
+php artisan migrate
+sudo chown -R $USER:www-data storage
+sudo chown -R $USER:www-data bootstrap/cache
+chmod -R 775 storage
+chmod -R 775 bootstrap/cache
+sudo a2enmod rewrite 
+sudo service apache2 restart
+sudo nano /etc/apache2/sites-available/domain.tld
+```
+DocumentRoot /var/www/domain.tld/www/public
+```
+
+# Path to work
+sudo nano /etc/apache2/apache2.conf
+search for <Directory /var/www/> and change AllowOverride None to AllowOverride All, 
+sudo service apache2 restart
+
+# Git config
+git config --global user.name "Amol Wankhede"
+git config --global user.email "emailaddress@gmail.com"
+ git config --global core.editor nano
+ 
+# MySql dump and restore
+ mysqldump -u root -p database > backup.sql
+ mysqldump -u root -p --all-databases > alldb_backup.sql
+ mysql -u root -p database < backup.sql
+
+# Create non sudo user for mysqldump
+ sudo mysql -u root -p
+  CREATE USER 'rootu'@'%' IDENTIFIED BY '';
+  GRANT ALL PRIVILEGES ON *.* TO 'rootu'@'%' WITH GRANT OPTION;
+  FLUSH PRIVILEGES;
+
+# To set timezone
+ sudo dpkg-reconfigure tzdata
+ sudo service rsyslog restart
+
+#LIST ALL SITES
+  apache2ctl -S
+
+# Extra step
+sudo find -type d -exec chmod 775 {} \;
+sudo find -type f -exec chmod 644 {} \;
+
+# Remove Mysql
+sudo apt-get remove --purge mysql*
+sudo apt-get purge mysql*
+sudo apt-get autoremove
+sudo apt-get autoclean
+sudo apt-get remove dbconfig-mysql
+sudo apt-get dist-upgrade
+sudo apt-get install mysql-server
